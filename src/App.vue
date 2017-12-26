@@ -20,9 +20,4 @@ export default {
   @include foundation-forms;
   @include foundation-xy-grid-classes;
   @include foundation-text-alignment;
-
-  tr.dataField td span {
-    opacity: 0.5;
-    margin-left: 3px;
-  }
 </style>
