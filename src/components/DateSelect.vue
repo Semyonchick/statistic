@@ -2,10 +2,10 @@
     <div class="grid-x">
         <div class="large-7 cell">
             <div class="input-group">
-                <span class="input-group-label">с</span>
-                <input type="date" class="input-group-field" v-model="dateFrom" @change="interval='other'">
-                <span class="input-group-label">до</span>
-                <input type="date" class="input-group-field" v-model="dateTo" @change="interval='other'">
+                <label for="from" class="input-group-label">с</label>
+                <input id="from" type="date" class="input-group-field" v-model="dateFrom" @change="interval='other'">
+                <label for="to" class="input-group-label">до</label>
+                <input id="to" type="date" class="input-group-field" v-model="dateTo" @change="interval='other'">
                 <div class="input-group-button">
                     <button class="button" :disabled="interval=='other'" @click="changeInterval(-1)">предыдущий
                     </button>

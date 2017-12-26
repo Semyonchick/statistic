@@ -53,32 +53,10 @@
                 list: {},
                 info: [],
                 leads: [],
-                leadStatistic: [],
                 leadStatusList: [],
             }
         },
         methods: {
-            calculateAll: function () {
-                let result = [];
-                for (let key in this.list) {
-                    let value = this.list[key],
-                        data = {},
-                        filter = value ? this.leadStatusList.filter(row => row.NAME === value) : value;
-
-                    data['sourceId'] = filter.length ? filter[0].STATUS_ID : null;
-                    data['name'] = value;
-                    data['price'] = this.calculate(key);
-                    data['leads'] = this.leads.filter(row => row.SOURCE_ID === data['sourceId']).length;
-                    data['leadsPercent'] = Math.round(data['leads'] * 100 / this.counts.leads);
-                    data['leadDeals'] = this.leadDeals.filter(row => row.SOURCE_ID === data['sourceId']).length;
-                    data['leadDealsPercent'] = Math.round(data['leadDeals'] * 100 / this.counts.leadDeals);
-                    data['leadCanceled'] = this.leadCanceled.filter(row => row.SOURCE_ID === data['sourceId']).length;
-                    data['leadCanceledPercent'] = Math.round(data['leadCanceled'] * 100 / this.counts.leadCanceled);
-                    data['priceDeal'] = data['leadDeals'] ? Math.round(data['price'] / data['leadDeals']) : data['price'] ? '***' : 0;
-                    result.push(data)
-                }
-                this.leadStatistic = result;
-            },
             calculate: function (key) {
                 return Math.round(this.filteredInfo.filter(value => key ? value.sourceId === key : true).map(value => value.price).reduce((a, b) => a + b, 0));
             },
@@ -105,10 +83,7 @@
                     if (leads.length === data.answer.next) return;
                     leads = leads.concat(data.answer.result);
                     if (data.answer.next) data.next();
-                    else {
-                        this.leads = leads;
-                        this.calculateAll();
-                    }
+                    else this.leads = leads;
                 });
             }
         },
@@ -123,12 +98,31 @@
                         price = Object.values(row.PROPERTY_114)[0] / (dates[1] - dates[0] + 1);
                     if (baseDates[0] <= dates[1] && baseDates[1] >= dates[0]) {
                         price = price * (Math.min(baseDates[1], dates[1]) - Math.max(baseDates[0], dates[0]) + 1);
-                    }
+                    } else price = 0;
                     return {
                         sourceId: Object.values(row.PROPERTY_112)[0],
                         price: price,
                     };
                 });
+            },
+            leadStatistic: function () {
+                let result = [];
+                for (let key in this.list) {
+                    let value = this.list[key],
+                        data = {},
+                        filter = value ? this.leadStatusList.filter(row => row.NAME === value) : value;
+
+                    data['sourceId'] = filter.length ? filter[0].STATUS_ID : null;
+                    data['name'] = value;
+                    data['price'] = this.calculate(key);
+                    Object.keys(this.counts).forEach((value) => {
+                        data[value] = this[value].filter(row => row.SOURCE_ID === data['sourceId']).length;
+                        data[value + 'Percent'] = Math.round(data[value] * 100 / this.counts[value]);
+                    });
+                    data['priceDeal'] = data['leadDeals'] ? Math.round(data['price'] / data['leadDeals']) : data['price'] ? '***' : 0;
+                    result.push(data)
+                }
+                return result;
             },
             leadCanceled: function () {
                 return this.leads.filter(row => row.STATUS_ID === 'JUNK')
@@ -151,6 +145,7 @@
                 FIELD_ID: 'PROPERTY_112',
             }, (data) => {
                 this.list = data.answer.result.L.DISPLAY_VALUES_FORM;
+                this.list[null] = '*** без источника';
             });
 
             BX24.callMethod('crm.status.list', {
@@ -162,9 +157,7 @@
 
             this.getInfo();
 
-            this.$nextTick(_ => {
-                this.date = this.$children[0];
-            })
+            this.$nextTick(_ => this.date = this.$children[0]);
         }
     }
 </script>
