@@ -87,12 +87,12 @@
         if (!this.info) return []
 
         this.getLeads()
-        const baseDates = [this.date.dateFrom, this.date.dateTo].map(value => Date.parse(value))
+        const baseDates = [this.date.dateFrom, this.date.dateTo].map(value => Date.parse(value) / 86400000)
         return this.info.map((row) => {
-          let dates = [row.ACTIVE_FROM, row.ACTIVE_TO].map(value => Date.parse(value.split(' ')[0].split('.').reverse().join('-')))
-          let price = Object.values(row.PROPERTY_114)[0] / ((dates[1] - dates[0]) / 86400000 + 1)
+          let dates = [row.ACTIVE_FROM, row.ACTIVE_TO].map(value => Date.parse(value.split(' ')[0].split('.').reverse().join('-')) / 86400000)
+          let price = Object.values(row.PROPERTY_114)[0] / (dates[1] - dates[0] + 1)
           if (baseDates[0] <= dates[1] && baseDates[1] >= dates[0]) {
-            price = price * ((Math.min(baseDates[1], dates[1]) - Math.max(baseDates[0], dates[0])) / 86400000 + 1)
+            price = price * (Math.min(baseDates[1], dates[1]) - Math.max(baseDates[0], dates[0]) + 1)
           } else price = 0
           return {
             sourceId: Object.values(row.PROPERTY_112)[0],
@@ -126,6 +126,19 @@
         return this.leads.filter(row => row.STATUS_ID === 'CONVERTED')
       },
       counts: function () {
+        if (this.leadDeals.length && this.date.interval === 'month') {
+          let params = {
+            IBLOCK_TYPE_ID: 'lists',
+            IBLOCK_ID: '80',
+            ELEMENT_CODE: this.date.dateFrom,
+            FIELDS: {
+              NAME: this.date.dateFrom,
+              PROPERTY_394: Math.round(this.calculate(false) / this.leadDeals.length)
+            }
+          }
+          BX.get('lists.element.add', params).catch(_ => BX.get('lists.element.update', params))
+        }
+
         return {
           leads: this.leads.length,
           leadDeals: this.leadDeals.length,

@@ -49,6 +49,9 @@
                 <th>Эффективность:</th>
                 <td v-for="user in managerInfo" v-if="user.st.dealsCount">
                     {{Math.round(user.st.registered / user.st.dealsCount * 100)}}%
+                    <span v-if="user.st.registered" class="success">{{Math.ceil(user.st.total / user.st.registered)}} руб.</span>
+                    <span v-else-if="user.st.total" class="bad">-{{user.st.total}} руб.</span>
+                    <span v-else >-</span>
                 </td>
             </tr>
             </tfoot>
@@ -93,7 +96,16 @@
               },
               select: select
             }).then(result2 => {
-              resolve(result.concat(result2))
+              this.getDealPrice.then(prices => {
+                resolve(result.concat(result2).map(deal => {
+                  prices.forEach(price => {
+                    if (price.NAME.indexOf(deal.BEGINDATE.replace(/\d{2}T.+/g, '')) !== -1) {
+                      deal.price = Object.values(price.PROPERTY_394)[0]
+                    }
+                  })
+                  return deal
+                }))
+              })
             })
           })
         })
@@ -106,33 +118,45 @@
           }
         })
       },
+      getDealPrice: function () {
+        return BX.get('lists.element.get', {
+          IBLOCK_TYPE_ID: 'lists',
+          IBLOCK_ID: '80',
+          ELEMENT_ORDER: {ID: 'DESC'}
+        })
+      },
       managerInfo: function () {
         return this.users.map(user => {
           user.st = {}
-          this.getDeals.then(deals => deals.filter(row => row.ASSIGNED_BY_ID === user.ID)).then(deals => {
-            user.st.dealsCount = deals.length
-            user.st.dealsNewCount = deals.filter(row => row.BEGINDATE >= this.dateComponent.dateFrom).length
-            user.st.dealsLoseCount = deals.filter(row => row.CLOSEDATE <= this.dateComponent.dateTo && row.STAGE_ID === 'LOSE').length
-            this.$forceUpdate()
-          })
           this.getStatus.then(statuses => {
             return statuses.filter(row => row.PROPERTY_VALUES && row.PROPERTY_VALUES.user === user.ID && +row.PROPERTY_VALUES.price)
           }).then(statuses => {
-            let registered = statuses.filter(row => row.PROPERTY_VALUES.status === 'register')
-            user.st.registered = registered.length
-            if (user.st.registered) {
-              user.st.registeredSum = registered.map(row => +row.PROPERTY_VALUES.price).reduce((a, b) => {
-                return a + b
-              })
-            }
-            let prepaid = statuses.filter(row => row.PROPERTY_VALUES.status === 'prepaid')
-            user.st.prepaid = prepaid.length
-            if (user.st.prepaid) {
-              user.st.prepaidSum = prepaid.map(row => +row.PROPERTY_VALUES.price).reduce((a, b) => {
-                return a + b
-              })
-            }
-            this.$forceUpdate()
+            this.getDeals.then(deals => deals.filter(row => row.ASSIGNED_BY_ID === user.ID)).then(deals => {
+              user.st.dealsCount = deals.length
+              user.st.dealsNewCount = deals.filter(row => row.BEGINDATE >= this.dateComponent.dateFrom).length
+              user.st.dealsLoseCount = deals.filter(row => row.CLOSEDATE <= this.dateComponent.dateTo && row.STAGE_ID === 'LOSE').length
+
+              statuses = statuses.filter(status => deals.filter(deal => deal.ID === status.PROPERTY_VALUES.deal).length)
+
+              let registered = statuses.filter(row => row.PROPERTY_VALUES.status === 'register')
+              user.st.registered = registered.length
+              if (user.st.registered) {
+                user.st.registeredSum = registered.map(row => +row.PROPERTY_VALUES.price).reduce((a, b) => {
+                  return a + b
+                })
+              }
+              let prepaid = statuses.filter(row => row.PROPERTY_VALUES.status === 'prepaid')
+              user.st.prepaid = prepaid.length
+              if (user.st.prepaid) {
+                user.st.prepaidSum = prepaid.map(row => +row.PROPERTY_VALUES.price).reduce((a, b) => {
+                  return a + b
+                })
+              }
+
+              user.st.total = deals.filter(deal => registered.filter(status => deal.ID === status.PROPERTY_VALUES.deal).length || deal.STAGE_ID === 'LOSE').map(deal => deal.price).reduce((a, b) => +a + +b)
+
+              this.$forceUpdate()
+            })
           })
           return user
         })
