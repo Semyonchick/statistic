@@ -38,7 +38,7 @@
                 </td>
             </tr>
             <tr>
-                <th>Зарегистрировано ДДУ,</th>
+                <th>Зарегистрировано ДДУ</th>
                 <td v-for="user in managerInfo">{{user.st.registered}}
                     <span class="opacity" v-if="user.st.registeredSum">/ {{user.st.registeredSum}} руб.</span></td>
             </tr>
@@ -78,6 +78,7 @@
           BX.get('crm.deal.list', {
             filter: {
               CATEGORY_ID: 0,
+              '!UF_CRM_1512969036': 100,
               '<=DATE_CREATE': this.dateComponent.dateTo,
               '>=CLOSEDATE': this.dateComponent.dateFrom
             },
@@ -86,6 +87,7 @@
             BX.get('crm.deal.list', {
               filter: {
                 CATEGORY_ID: 0,
+                '!UF_CRM_1512969036': 100,
                 '<=DATE_CREATE': this.dateComponent.dateTo,
                 'CLOSED': 'N'
               },
@@ -105,7 +107,7 @@
         })
       },
       managerInfo: function () {
-        this.users = this.users.map(user => {
+        return this.users.map(user => {
           user.st = {}
           this.getDeals.then(deals => deals.filter(row => row.ASSIGNED_BY_ID === user.ID)).then(deals => {
             user.st.dealsCount = deals.length
@@ -113,7 +115,9 @@
             user.st.dealsLoseCount = deals.filter(row => row.CLOSEDATE <= this.dateComponent.dateTo && row.STAGE_ID === 'LOSE').length
             this.$forceUpdate()
           })
-          this.getStatus.then(statuses => statuses.filter(row => row.PROPERTY_VALUES.user === user.ID && +row.PROPERTY_VALUES.price)).then(statuses => {
+          this.getStatus.then(statuses => {
+            return statuses.filter(row => row.PROPERTY_VALUES && row.PROPERTY_VALUES.user === user.ID && +row.PROPERTY_VALUES.price)
+          }).then(statuses => {
             let registered = statuses.filter(row => row.PROPERTY_VALUES.status === 'register')
             user.st.registered = registered.length
             if (user.st.registered) {
@@ -132,7 +136,6 @@
           })
           return user
         })
-        return this.users
       }
     },
     created () {

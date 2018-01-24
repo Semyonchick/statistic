@@ -11,22 +11,23 @@
       return new Promise((resolve, reject) => {
         if (this.cache && sessionStorage.getItem(cacheId)) {
           resolve(JSON.parse(sessionStorage.getItem(cacheId)))
-        }
-        let data = []
-        BX24.callMethod(method, params, (request) => {
-          if (request.error()) {
-            reject(request.error())
-          } else {
-            data = data.concat(request.answer.result)
-            if (request.answer.next && (!next || next(data))) request.next()
-            else {
-              if (this.cache && method.match(/\.(get|list)$/)) {
-                sessionStorage.setItem(cacheId, JSON.stringify(data))
+        } else {
+          let data = []
+          BX24.callMethod(method, params, (request) => {
+            if (request.error()) {
+              reject(request.error())
+            } else {
+              data = data.concat(request.answer.result)
+              if (request.answer.next && (!next || next(data))) request.next()
+              else {
+                if (this.cache && method.match(/\.(get|list)$/)) {
+                  sessionStorage.setItem(cacheId, JSON.stringify(data))
+                }
+                resolve(data)
               }
-              resolve(data)
             }
-          }
-        })
+          })
+        }
       })
     },
     batch (methods) {

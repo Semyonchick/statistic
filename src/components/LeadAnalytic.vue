@@ -44,9 +44,8 @@
 </template>
 
 <script>
-  /* eslint-disable no-undef */
-
   import DateSelect from './DateSelect.vue'
+  import BX from '../services/BXService'
 
   export default {
     components: {DateSelect},
@@ -65,29 +64,21 @@
         return Math.round(this.filteredInfo.filter(value => key ? value.sourceId === key : true).map(value => value.price).reduce((a, b) => a + b, 0))
       },
       getInfo: function () {
-        let info = []
-        BX24.callMethod('lists.element.get', {
+        BX.get('lists.element.get', {
           IBLOCK_TYPE_ID: 'lists',
           IBLOCK_ID: '30',
           ELEMENT_ORDER: {ID: 'DESC'}
-        }, (data) => {
-          if (info.length === data.answer.next) return
-          info = info.concat(data.answer.result)
-          if (data.answer.next) data.next()
-          else this.info = info
+        }).then((data) => {
+          this.info = data
         })
       },
       getLeads: function () {
-        let leads = []
-        BX24.callMethod('crm.lead.list', {
+        BX.get('crm.lead.list', {
           order: {'ID': 'ASC'},
           filter: {'>DATE_CREATE': this.date.dateFrom, '<DATE_CREATE': this.date.dateTo},
           select: ['ID', 'STATUS_ID', 'SOURCE_ID']
-        }, (data) => {
-          if (leads.length === data.answer.next) return
-          leads = leads.concat(data.answer.result)
-          if (data.answer.next) data.next()
-          else this.leads = leads
+        }).then((data) => {
+          this.leads = data
         })
       }
     },
@@ -96,12 +87,12 @@
         if (!this.info) return []
 
         this.getLeads()
-        const baseDates = [this.date.dateFrom, this.date.dateTo].map(value => +value.replace(/-/g, ''))
+        const baseDates = [this.date.dateFrom, this.date.dateTo].map(value => Date.parse(value))
         return this.info.map((row) => {
-          let dates = [row.ACTIVE_FROM, row.ACTIVE_TO].map(value => +value.split(' ')[0].split('.').reverse().join(''))
-          let price = Object.values(row.PROPERTY_114)[0] / (dates[1] - dates[0] + 1)
+          let dates = [row.ACTIVE_FROM, row.ACTIVE_TO].map(value => Date.parse(value.split(' ')[0].split('.').reverse().join('-')))
+          let price = Object.values(row.PROPERTY_114)[0] / ((dates[1] - dates[0]) / 86400000 + 1)
           if (baseDates[0] <= dates[1] && baseDates[1] >= dates[0]) {
-            price = price * (Math.min(baseDates[1], dates[1]) - Math.max(baseDates[0], dates[0]) + 1)
+            price = price * ((Math.min(baseDates[1], dates[1]) - Math.max(baseDates[0], dates[0])) / 86400000 + 1)
           } else price = 0
           return {
             sourceId: Object.values(row.PROPERTY_112)[0],
@@ -143,20 +134,20 @@
       }
     },
     created () {
-      BX24.callMethod('lists.field.get', {
+      BX.get('lists.field.get', {
         IBLOCK_TYPE_ID: 'lists',
         IBLOCK_ID: '30',
         FIELD_ID: 'PROPERTY_112'
-      }, (data) => {
-        this.list = data.answer.result.L.DISPLAY_VALUES_FORM
+      }).then((data) => {
+        this.list = data[0].L.DISPLAY_VALUES_FORM
         this.list[null] = '*** без источника'
       })
 
-      BX24.callMethod('crm.status.list', {
+      BX.get('crm.status.list', {
         filter: {'ENTITY_ID': 'SOURCE'},
         select: ['STATUS_ID', 'NAME']
-      }, (data) => {
-        this.leadStatusList = data.answer.result
+      }).then((data) => {
+        this.leadStatusList = data
       })
 
       this.getInfo()

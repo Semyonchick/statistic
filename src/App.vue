@@ -28,6 +28,7 @@
       }
     },
     updated () {
+      // eslint-disable-next-line
       BX24.fitWindow()
     },
     methods: {
@@ -36,7 +37,7 @@
         this.move().then(_ => location.reload())
       },
       move () {
-        BX.get('lists.element.get', {
+        return BX.get('lists.element.get', {
           IBLOCK_TYPE_ID: 'lists',
           IBLOCK_ID: 32,
           ELEMENT_ORDER: {ID: 'DESC'}
@@ -67,7 +68,7 @@
       },
       install () {
         return BX.batch([
-          ['entity.add', {ENTITY: 'dealStatus', NAME: 'Статусы сделок'}],
+          ['entity.add', {ENTITY: 'dealStatus', NAME: 'Статусы сделок', ACCESS: {AU: 'W'}}],
           ['entity.item.property.add', {ENTITY: 'dealStatus', PROPERTY: 'status', NAME: 'Статус', TYPE: 'S'}],
           ['entity.item.property.add', {ENTITY: 'dealStatus', PROPERTY: 'deal', NAME: 'Сделка', TYPE: 'N'}],
           ['entity.item.property.add', {ENTITY: 'dealStatus', PROPERTY: 'user', NAME: 'Сотрудник', TYPE: 'N'}],
@@ -75,16 +76,20 @@
         ]).then(_ => console.log('data is installed'))
       },
       remove () {
-        return BX.get('entity.delete', {ENTITY: 'dealStatus'}).then(_ => location.reload())
+        if (confirm('лучше этого не делать')) {
+          BX.get('entity.delete', {ENTITY: 'dealStatus'}).then(_ => location.reload())
+        }
       }
     },
     created () {
+      setInterval(_ => {
+        // eslint-disable-next-line
+        BX24.fitWindow()
+      }, 1000)
       BX.get('entity.get', {ENTITY: 'dealStatus'}).then(data => {
         if (data.length === 0) {
           this.install().then(_ => this.move())
         }
-      }).catch(_ => {
-        this.install().then(_ => this.move())
       })
     }
   }
