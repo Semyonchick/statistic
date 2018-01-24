@@ -6,16 +6,10 @@
         </div>
         <ul class="menu simple">
             <li><b>Аналитика</b>:</li>
-            <li><a href="/#/leads">Каналы</a></li>
-            <li><a href="/#/manager">Продажи</a></li>
+            <li><a href="#/leads">Каналы</a></li>
+            <li><a href="#/manager">Продажи</a></li>
             <li v-if="admin">
                 <a href="#" @click.prevent="remove()">delete</a>
-            </li>
-            <li v-if="admin">
-                <a href="#" @click.prevent="install()">install</a>
-            </li>
-            <li v-if="admin">
-                <a href="#" @click.prevent="move()">update</a>
             </li>
         </ul>
         <div class="clearfix"></div>
@@ -39,7 +33,7 @@
     methods: {
       refresh () {
         sessionStorage.clear()
-        location.reload()
+        this.move().then(_ => location.reload())
       },
       move () {
         BX.get('lists.element.get', {
@@ -49,23 +43,25 @@
         }).then((data) => {
           let addList = []
           data.forEach(row => {
-            BX.get('entity.item.get', {ENTITY: 'dealStatus', FILTER: {'NAME': row.NAME.trim()}}).then(list => {
-              if (list.length === 0 && row.PROPERTY_120 && row.PROPERTY_118 && addList.indexOf(row.NAME) === -1) {
-                addList.push(row.NAME)
-                let params = {
-                  ENTITY: 'dealStatus',
-                  DATE_ACTIVE_FROM: row.DATE_CREATE,
-                  NAME: row.NAME,
-                  PROPERTY_VALUES: {
-                    status: Object.values(row.PROPERTY_122 || {})[0],
-                    deal: Object.values(row.PROPERTY_120 || {})[0],
-                    user: Object.values(row.PROPERTY_118 || {})[0],
-                    price: Object.values(row.PROPERTY_126 || {})[0].replace(/[^\d\\.]/g, '') || 0
+            if (addList.indexOf(row.NAME) === -1) {
+              addList.push(row.NAME)
+              BX.get('entity.item.get', {ENTITY: 'dealStatus', FILTER: {'NAME': row.NAME.trim()}}).then(list => {
+                if (list.length === 0 && row.PROPERTY_120 && row.PROPERTY_118) {
+                  let params = {
+                    ENTITY: 'dealStatus',
+                    DATE_ACTIVE_FROM: row.DATE_CREATE,
+                    NAME: row.NAME,
+                    PROPERTY_VALUES: {
+                      status: Object.values(row.PROPERTY_122 || {})[0],
+                      deal: Object.values(row.PROPERTY_120 || {})[0],
+                      user: Object.values(row.PROPERTY_118 || {})[0],
+                      price: Object.values(row.PROPERTY_126 || {})[0].replace(/[^\d\\.]/g, '') || 0
+                    }
                   }
+                  BX.get('entity.item.add', params)
                 }
-                BX.get('entity.item.add', params)
-              }
-            })
+              })
+            }
           })
         })
       },
@@ -79,11 +75,17 @@
         ]).then(_ => console.log('data is installed'))
       },
       remove () {
-        return BX.get('entity.delete', {ENTITY: 'dealStatus'}).then(_ => console.log('data is deleted'))
+        return BX.get('entity.delete', {ENTITY: 'dealStatus'}).then(_ => location.reload())
       }
     },
     created () {
-      this.move()
+      BX.get('entity.get', {ENTITY: 'dealStatus'}).then(data => {
+        if (data.length === 0) {
+          this.install().then(_ => this.move())
+        }
+      }).catch(_ => {
+        this.install().then(_ => this.move())
+      })
     }
   }
 </script>
