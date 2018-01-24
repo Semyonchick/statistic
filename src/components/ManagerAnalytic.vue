@@ -9,6 +9,7 @@
                 <th v-for="user in managerInfo">{{user.NAME}} {{user.LAST_NAME[0]}}.</th>
             </tr>
             </thead>
+
             <tbody>
             <!--<tr>
                 <th>Звонки </th>
@@ -42,20 +43,16 @@
                     <span class="opacity" v-if="user.st.registeredSum">/ {{user.st.registeredSum}} руб.</span></td>
             </tr>
             </tbody>
+
             <tfoot>
             <tr>
                 <th>Эффективность:</th>
-                <td v-for="user in managerInfo" v-if="user.st.dealsCount">{{Math.round(user.st.registered/user.st.dealsCount*100)}}%</td>
+                <td v-for="user in managerInfo" v-if="user.st.dealsCount">
+                    {{Math.round(user.st.registered / user.st.dealsCount * 100)}}%
+                </td>
             </tr>
-
             </tfoot>
         </table>
-
-        <div v-if="admin">
-            <button @click="remove()">delete</button>
-            <button @click="install()">install</button>
-            <button @click="move()">update</button>
-        </div>
     </div>
 </template>
 
@@ -68,54 +65,12 @@
     name: 'ManagerAnalytic',
     data () {
       return {
-        admin: false,
         dateComponent: false,
         deals: [],
         users: []
       }
     },
-    methods: {
-      move () {
-        BX.get('lists.element.get', {
-          IBLOCK_TYPE_ID: 'lists',
-          IBLOCK_ID: 32,
-          ELEMENT_ORDER: {ID: 'DESC'}
-        }).then((data) => {
-          let addList = []
-          data.forEach(row => {
-            BX.get('entity.item.get', {ENTITY: 'dealStatus', FILTER: {'NAME': row.NAME.trim()}}).then(list => {
-              if (list.length === 0 && row.PROPERTY_120 && row.PROPERTY_118 && addList.indexOf(row.NAME) === -1) {
-                addList.push(row.NAME)
-                let params = {
-                  ENTITY: 'dealStatus',
-                  DATE_ACTIVE_FROM: row.DATE_CREATE,
-                  NAME: row.NAME,
-                  PROPERTY_VALUES: {
-                    status: Object.values(row.PROPERTY_122 || {})[0],
-                    deal: Object.values(row.PROPERTY_120 || {})[0],
-                    user: Object.values(row.PROPERTY_118 || {})[0],
-                    price: Object.values(row.PROPERTY_126 || {})[0].replace(/[^\d\\.]/g, '') || 0
-                  }
-                }
-                BX.get('entity.item.add', params)
-              }
-            })
-          })
-        })
-      },
-      install () {
-        return BX.batch([
-          ['entity.add', {ENTITY: 'dealStatus', NAME: 'Статусы сделок'}],
-          ['entity.item.property.add', {ENTITY: 'dealStatus', PROPERTY: 'status', NAME: 'Статус', TYPE: 'S'}],
-          ['entity.item.property.add', {ENTITY: 'dealStatus', PROPERTY: 'deal', NAME: 'Сделка', TYPE: 'N'}],
-          ['entity.item.property.add', {ENTITY: 'dealStatus', PROPERTY: 'user', NAME: 'Сотрудник', TYPE: 'N'}],
-          ['entity.item.property.add', {ENTITY: 'dealStatus', PROPERTY: 'price', NAME: 'Сумма', TYPE: 'N'}]
-        ]).then(_ => console.log('data is installed'))
-      },
-      remove () {
-        return BX.get('entity.delete', {ENTITY: 'dealStatus'}).then(_ => console.log('data is deleted'))
-      }
-    },
+    methods: {},
     computed: {
       getDeals: function () {
         let select = ['*']
@@ -167,7 +122,6 @@
               })
             }
             let prepaid = statuses.filter(row => row.PROPERTY_VALUES.status === 'prepaid')
-            console.log(prepaid)
             user.st.prepaid = prepaid.length
             if (user.st.prepaid) {
               user.st.prepaidSum = prepaid.map(row => +row.PROPERTY_VALUES.price).reduce((a, b) => {
@@ -182,11 +136,9 @@
       }
     },
     created () {
-      this.move()
-
       BX.get('user.get', {
         FILTER: {UF_DEPARTMENT: 114}
-      }).then((data) => {
+      }).then(data => {
         this.users = data
       })
 
