@@ -63,7 +63,7 @@
         return data.STAGE_ID === 'WON'
       },
       work (data) {
-        return ['LOSE', 'WON'].indexOf(data.STAGE_ID) !== -1
+        return ['LOSE', 'WON'].indexOf(data.STAGE_ID) === -1
       }
     },
     computed: {
