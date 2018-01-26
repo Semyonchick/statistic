@@ -15,19 +15,35 @@
             <tbody>
             <tr v-for="agent in agents" v-if="agent.leads">
                 <th>{{agent.VALUE}}</th>
-                <td>{{agent.leads.filter(work).length}}</td>
-                <td>{{agent.leads.filter(lose).length}}</td>
-                <td>{{agent.leads.filter(won).length}}</td>
-                <td>{{agent.leads.length}}</td>
+                <td class="success" v-if="data=agent.leads.filter(work)">
+                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                </td>
+                <td class="bad" v-if="data=agent.leads.filter(lose)">
+                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                </td>
+                <td class="primary" v-if="data=agent.leads.filter(won)">
+                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                </td>
+                <td v-if="data=agent.leads">
+                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                </td>
             </tr>
             </tbody>
             <tfoot>
             <tr>
                 <th>ИТОГО:</th>
-                <td>{{leads.filter(work).length}}</td>
-                <td>{{leads.filter(lose).length}}</td>
-                <td>{{leads.filter(won).length}}</td>
-                <td>{{leads.length}}</td>
+                <td v-if="data=leads.filter(work)">
+                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                </td>
+                <td v-if="data=leads.filter(lose)">
+                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                </td>
+                <td v-if="data=leads.filter(won)">
+                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                </td>
+                <td v-if="data=leads">
+                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                </td>
             </tr>
             </tfoot>
         </table>
@@ -53,6 +69,9 @@
       }
     },
     methods: {
+      sum (list) {
+        return list.length ? list.map(row => +row.OPPORTUNITY).reduce((a, b) => a + b) : false
+      },
       date () {
         return this.$children[0]
       },
@@ -75,7 +94,7 @@
           let filter2 = {'>=CLOSEDATE': this.date().dateFrom, '<=CLOSEDATE': this.date().dateTo}
           filter2[this.code.source] = this.code.sourceValue
 
-          let select = ['ID', 'STAGE_ID', 'DATE_CREATE', 'CLOSEDATE', 'SOURCE_ID', this.code.agent]
+          let select = ['ID', 'STAGE_ID', 'OPPORTUNITY', 'SOURCE_ID', this.code.agent]
           BX.batch([
             ['crm.deal.list', {filter: filter1, select: select}],
             ['crm.deal.list', {filter: filter2, select: select}]

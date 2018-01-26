@@ -108,4 +108,20 @@
     @include foundation-text-alignment;
     @include foundation-menu;
     @include foundation-float-classes;
+
+    .primary {
+        color: blue;
+    }
+
+    .success {
+        color: green;
+    }
+
+    .bad {
+        color: red;
+    }
+
+    .opacity {
+        opacity: 0.5;
+    }
 </style>

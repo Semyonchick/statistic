@@ -190,20 +190,4 @@
     tbody tr:hover {
         background: #ffebfb;
     }
-
-    .primary {
-        color: blue;
-    }
-
-    .success {
-        color: green;
-    }
-
-    .bad {
-        color: red;
-    }
-
-    .opacity {
-        opacity: 0.5;
-    }
 </style>
