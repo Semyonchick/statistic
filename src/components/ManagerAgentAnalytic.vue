@@ -49,9 +49,6 @@
                 <th>Эффективность:</th>
                 <td v-for="user in managerInfo" v-if="user.st.dealsCount">
                     {{Math.round(user.st.registered / user.st.dealsCount * 100)}}%
-                    <span v-if="user.st.registered" class="success">{{Math.ceil(user.st.total / user.st.registered)}} руб.</span>
-                    <span v-else-if="user.st.total" class="bad">-{{user.st.total}} руб.</span>
-                    <span v-else>-</span>
                 </td>
             </tr>
             </tfoot>
@@ -72,7 +69,7 @@
         deals: [],
         baseFilter: {
           CATEGORY_ID: 0,
-          '!UF_CRM_1512969036': 100
+          'UF_CRM_1512969036': 100
         },
         users: []
       }
@@ -100,16 +97,7 @@
               }, this.baseFilter),
               select: select
             }).then(result2 => {
-              this.getDealPrice.then(prices => {
-                resolve(result.concat(result2).map(deal => {
-                  prices.forEach(price => {
-                    if (price.NAME.indexOf(deal.BEGINDATE.replace(/\d{2}T.+/g, '')) !== -1) {
-                      deal.price = Object.values(price.PROPERTY_394)[0]
-                    }
-                  })
-                  return deal
-                }))
-              })
+              resolve(result.concat(result2))
             })
           })
         })
@@ -151,8 +139,6 @@
                 return a + b
               })
             }
-
-            user.st.total = deals.filter(deal => registered.filter(row => deal.ID === row.ID).length || deal.STAGE_ID === 'LOSE').map(deal => deal.price).reduce((a, b) => +a + +b)
 
             this.$forceUpdate()
           })

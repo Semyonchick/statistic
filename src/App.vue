@@ -9,6 +9,7 @@
             <li><a href="#/leads">Каналы</a></li>
             <li><a href="#/manager">Продажи</a></li>
             <li><a href="#/agents">Агенства</a></li>
+            <li><a href="#/agentManager">Продажи по агенствам</a></li>
             <li v-if="admin">
                 <a href="#" @click.prevent="remove()">delete</a>
             </li>
