@@ -2,7 +2,7 @@
     <div>
         <date-select></date-select>
 
-        <table v-if="date()" width="100%" cellspacing="0" cellpadding="0">
+        <table v-if="date() && leadsList.length" width="100%" cellspacing="0" cellpadding="0">
             <thead>
             <tr>
                 <th>Агенства</th>
@@ -86,27 +86,11 @@
       }
     },
     computed: {
-      getLeads () {
-        return new Promise(resolve => {
-          let filter1 = {'>=DATE_CREATE': this.date().dateFrom, '<=DATE_CREATE': this.date().dateTo}
-          filter1[this.code.source] = this.code.sourceValue
-
-          let filter2 = {'>=CLOSEDATE': this.date().dateFrom, '<=CLOSEDATE': this.date().dateTo}
-          filter2[this.code.source] = this.code.sourceValue
-
-          let select = ['ID', 'STAGE_ID', 'OPPORTUNITY', 'SOURCE_ID', this.code.agent]
-          BX.batch([
-            ['crm.deal.list', {filter: filter1, select: select}],
-            ['crm.deal.list', {filter: filter2, select: select}]
-          ]).then(result => {
-            resolve(result[0].concat(result[1]))
-          })
+      leadsList () {
+        this.agents.map(agent => {
+          agent.leads = false
+          return agent
         })
-      }
-    },
-    created () {
-      BX.get('crm.deal.userfield.list').then(data => {
-        this.agents = data.filter(row => row.FIELD_NAME === this.code.agent)[0].LIST
         this.getLeads.then((data) => {
           this.leads = data
           data.forEach(row => {
@@ -121,8 +105,32 @@
             })
           })
           this.$forceUpdate()
-          console.log(data)
         })
+        return this.leads
+      },
+      getLeads () {
+        return new Promise(resolve => {
+          let filter1 = {'>=DATE_CREATE': this.$children[0].dateFrom, '<=DATE_CREATE': this.$children[0].dateTo}
+          filter1[this.code.source] = this.code.sourceValue
+
+          let filter2 = {'>=CLOSEDATE': this.$children[0].dateFrom, '<=CLOSEDATE': this.$children[0].dateTo}
+          filter2[this.code.source] = this.code.sourceValue
+
+          let select = ['ID', 'STAGE_ID', 'OPPORTUNITY', 'SOURCE_ID', this.code.agent]
+          BX.batch([
+            ['crm.deal.list', {filter: filter1, select: select}],
+            ['crm.deal.list', {filter: filter2, select: select}]
+          ]).then(result => {
+            this.$forceUpdate()
+            resolve(result[0].concat(result[1]))
+          })
+        })
+      }
+    },
+    created () {
+      BX.get('crm.deal.userfield.list').then(data => {
+        this.agents = data.filter(row => row.FIELD_NAME === this.code.agent)[0].LIST
+        this.$forceUpdate()
       })
     }
   }

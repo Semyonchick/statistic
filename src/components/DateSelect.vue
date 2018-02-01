@@ -84,11 +84,13 @@
           date.setDate(date.getDate() + 6)
         }
         this.dateTo = date.toISOString().split('T')[0]
+
+        sessionStorage.setItem('filterDate', this.dateFrom)
       }
     },
     created () {
       const d = new Date()
-      this.setInterval(new Date(Date.UTC(d.getFullYear(), d.getMonth(), 1)))
+      this.setInterval(new Date(sessionStorage.getItem('filterDate') || Date.UTC(d.getFullYear(), d.getMonth(), 1)))
     }
   }
 </script>

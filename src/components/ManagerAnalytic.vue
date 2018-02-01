@@ -140,19 +140,22 @@
             let registered = deals.filter(deal => this.inDates(deal.UF_CRM_1512978954235))
             user.st.registered = registered.length
             if (user.st.registered) {
-              user.st.registeredSum = registered.map(deal => +deal.OPPORTUNITY).reduce((a, b) => {
+              user.st.registeredSum = registered.map(deal => +deal.OPPORTUNITY || 0).reduce((a, b) => {
                 return a + b
               })
             }
             let prepaid = deals.filter(deal => this.inDates(deal.UF_CRM_1517221718))
             user.st.prepaid = prepaid.length
             if (user.st.prepaid) {
-              user.st.prepaidSum = prepaid.map(deal => +deal.UF_CRM_1512967601319).reduce((a, b) => {
+              user.st.prepaidSum = prepaid.map(deal => +deal.UF_CRM_1512967601319 || 0).reduce((a, b) => {
                 return a + b
               })
             }
 
-            user.st.total = deals.filter(deal => registered.filter(row => deal.ID === row.ID).length || deal.STAGE_ID === 'LOSE').map(deal => deal.price).reduce((a, b) => +a + +b)
+            let all = deals.filter(deal => registered.filter(row => deal.ID === row.ID).length || deal.STAGE_ID === 'LOSE')
+            if (all.length) {
+              user.st.total = all.map(deal => deal.price).reduce((a, b) => +a + +b)
+            }
 
             this.$forceUpdate()
           })
