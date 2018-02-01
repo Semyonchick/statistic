@@ -56,6 +56,7 @@
         list: {},
         info: [],
         leads: [],
+        inDeals: [],
         leadStatusList: []
       }
     },
@@ -73,9 +74,15 @@
         })
       },
       getLeads: function () {
+        BX.get('crm.deal.list', {
+          filter: {'>=DATE_CREATE': this.date.dateFrom, '<=DATE_CREATE': this.date.dateTo, '!LEAD_ID': ''},
+          select: ['LEAD_ID']
+        }).then((data) => {
+          this.inDeals = data.map(row => row.LEAD_ID)
+        })
         BX.get('crm.lead.list', {
           order: {'ID': 'ASC'},
-          filter: {'>DATE_CREATE': this.date.dateFrom, '<DATE_CREATE': this.date.dateTo},
+          filter: {'>=DATE_CREATE': this.date.dateFrom, '<=DATE_CREATE': this.date.dateTo},
           select: ['ID', 'STATUS_ID', 'SOURCE_ID']
         }).then((data) => {
           this.leads = data
@@ -123,7 +130,7 @@
         return this.leads.filter(row => row.STATUS_ID === 'JUNK')
       },
       leadDeals: function () {
-        return this.leads.filter(row => row.STATUS_ID === 'CONVERTED')
+        return this.leads.filter(row => row.STATUS_ID === 'CONVERTED' && this.inDeals.indexOf(row.ID) !== -1)
       },
       counts: function () {
         if (this.leadDeals.length && this.date.interval === 'month') {
