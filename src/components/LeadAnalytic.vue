@@ -14,7 +14,7 @@
             </tr>
             </thead>
             <tbody>
-            <tr v-for="row in leadStatistic">
+            <tr v-for="row in leadStatistic" v-if="row.leads || row.price">
                 <th>{{row.name}}</th>
                 <td>{{row.price}}</td>
                 <td>{{row.priceDeal}}</td>
@@ -56,7 +56,9 @@
         list: {},
         info: [],
         leads: [],
+        deals: [],
         inDeals: [],
+        dealStatusList: [],
         leadStatusList: []
       }
     },
@@ -74,18 +76,28 @@
         })
       },
       getLeads: function () {
+        this.leads = []
         BX.get('crm.deal.list', {
-          filter: {'>=DATE_CREATE': this.date.dateFrom, '<=DATE_CREATE': this.date.dateTo, '!LEAD_ID': ''},
-          select: ['LEAD_ID']
+          filter: {
+            '>=DATE_CREATE': this.date.dateFrom,
+            '<=DATE_CREATE': this.date.dateTo,
+            CATEGORY_ID: 0,
+            '!UF_CRM_1512969036': 100
+          },
+          select: ['ID', 'LEAD_ID', 'STAGE_ID', 'UF_CRM_1512969036', 'DATE_CREATE']
         }).then((data) => {
+          this.deals = data.filter(row => !row.LEAD_ID)
+          this.deals.forEach(row => this.leads.push(row))
           this.inDeals = data.map(row => row.LEAD_ID)
+          this.$forceUpdate()
         })
         BX.get('crm.lead.list', {
           order: {'ID': 'ASC'},
           filter: {'>=DATE_CREATE': this.date.dateFrom, '<=DATE_CREATE': this.date.dateTo},
           select: ['ID', 'STATUS_ID', 'SOURCE_ID']
         }).then((data) => {
-          this.leads = data
+          data.forEach(row => this.leads.push(row))
+          this.$forceUpdate()
         })
       }
     },
@@ -109,28 +121,45 @@
       },
       leadStatistic: function () {
         let result = []
-        for (let key in this.list) {
-          let value = this.list[key]
+//        for (let key in this.list) {
+//          let value = this.list[key]
+//          let data = {}
+//          data['sourceId'] = key
+//          data['name'] = value
+//          data['price'] = this.calculate(key)
+//          Object.keys(this.counts).forEach((value) => {
+//            data[value] = this[value].filter(row => row.SOURCE_ID === key || row.UF_CRM_1512969036 === key).length
+//            data[value + 'Percent'] = Math.round(data[value] * 100 / this.counts[value])
+//          })
+//          data['priceDeal'] = data['leadDeals'] ? Math.round(data['price'] / data['leadDeals']) : data['price'] ? '***' : 0
+//          result.push(data)
+//        }
+        this.leadStatusList.forEach(status => {
           let data = {}
-          let filter = value ? this.leadStatusList.filter(row => row.NAME === value) : value
-
-          data['sourceId'] = filter.length ? filter[0].STATUS_ID : null
-          data['name'] = value
-          data['price'] = this.calculate(key)
+          data['sourceId'] = status.STATUS_ID
+          data['name'] = status.NAME
+          data['price'] = 0
+          for (let key in this.list) {
+            if (this.list[key] === status.NAME) {
+              data['price'] = this.calculate(key)
+            }
+          }
           Object.keys(this.counts).forEach((value) => {
-            data[value] = this[value].filter(row => row.SOURCE_ID === data['sourceId']).length
+            data[value] = this[value].filter(row => row.SOURCE_ID === data['sourceId'] || (
+              row.UF_CRM_1512969036 && this.dealStatusList.filter(status => status.ID === row.UF_CRM_1512969036)[0]['VALUE'] === data['name']
+            )).length
             data[value + 'Percent'] = Math.round(data[value] * 100 / this.counts[value])
           })
-          data['priceDeal'] = data['leadDeals'] ? Math.round(data['price'] / data['leadDeals']) : data['price'] ? '***' : 0
+          data['priceDeal'] = data['leadDeals'] ? Math.round(data['price'] / data['leadDeals']) : data['price'] ? '***' : ''
           result.push(data)
-        }
+        })
         return result
       },
       leadCanceled: function () {
         return this.leads.filter(row => row.STATUS_ID === 'JUNK')
       },
       leadDeals: function () {
-        return this.leads.filter(row => row.STATUS_ID === 'CONVERTED' && this.inDeals.indexOf(row.ID) !== -1)
+        return this.leads.filter(row => row.STAGE_ID || (row.STATUS_ID === 'CONVERTED' && this.inDeals.indexOf(row.ID) !== -1))
       },
       counts: function () {
         if (this.leadDeals.length && this.date.interval === 'month') {
@@ -162,12 +191,19 @@
         this.list = data[0].L.DISPLAY_VALUES_FORM
         this.list[null] = '*** без источника'
       })
+      BX.get('crm.deal.userfield.list', {filter: {FIELD_NAME:'UF_CRM_1512969036'}}).then((data) => {
+        this.dealStatusList = data[0].LIST
+      })
 
       BX.get('crm.status.list', {
         filter: {'ENTITY_ID': 'SOURCE'},
         select: ['STATUS_ID', 'NAME']
       }).then((data) => {
         this.leadStatusList = data
+        this.leadStatusList.push({
+          NAME: '*** без источника',
+          STATUS_ID: null
+        })
       })
 
       this.getInfo()
