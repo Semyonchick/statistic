@@ -86,30 +86,16 @@
       getDeals: function () {
         let select = ['*', 'UF_CRM_1512978954235', 'UF_CRM_1517221718', 'UF_CRM_1512967601319']
         return new Promise((resolve, reject) => {
-          BX.get('crm.deal.list', {
-            filter: Object.assign({
-              '<=DATE_CREATE': this.dateComponent.dateTo,
-              '>=CLOSEDATE': this.dateComponent.dateFrom
-            }, this.baseFilter),
-            select: select
-          }).then(result => {
-            BX.get('crm.deal.list', {
-              filter: Object.assign({
-                '<=DATE_CREATE': this.dateComponent.dateTo,
-                'CLOSED': 'N'
-              }, this.baseFilter),
-              select: select
-            }).then(result2 => {
-              this.getDealPrice.then(prices => {
-                resolve(result.concat(result2).map(deal => {
-                  prices.forEach(price => {
-                    if (price.NAME.indexOf(deal.BEGINDATE.replace(/\d{2}T.+/g, '')) !== -1) {
-                      deal.price = Object.values(price.PROPERTY_394)[0]
-                    }
-                  })
-                  return deal
-                }))
-              })
+          BX.deals(this.$children[0].dateFrom, this.$children[0].dateTo, this.baseFilter, select).then(result => {
+            this.getDealPrice.then(prices => {
+              resolve(result.map(deal => {
+                prices.forEach(price => {
+                  if (price.NAME.indexOf(deal.BEGINDATE.replace(/\d{2}T.+/g, '')) !== -1) {
+                    deal.price = Object.values(price.PROPERTY_394)[0]
+                  }
+                })
+                return deal
+              }))
             })
           })
         })

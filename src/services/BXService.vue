@@ -36,6 +36,34 @@
           resolve(request.map(row => row.answer.result).filter(row => row))
         })
       })
+    },
+    deals (from, to, filter, select) {
+      return new Promise((resolve, reject) => {
+        let result = []
+        let status = []
+        this.get('crm.deal.list', {
+          filter: Object.assign({
+            '<=DATE_CREATE': to,
+            '>=CLOSEDATE': from
+          }, filter),
+          select: select
+        }).then(data => {
+          result = result.concat(data)
+          status.push(1)
+          if(status.length === 2) resolve(result)
+        })
+        this.get('crm.deal.list', {
+          filter: Object.assign({
+            '<=DATE_CREATE': to,
+            'CLOSED': 'N'
+          }, filter),
+          select: select
+        }).then(data => {
+          result = result.concat(data)
+          status.push(1)
+          if(status.length === 2) resolve(result)
+        })
+      })
     }
   }
 </script>

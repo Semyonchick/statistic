@@ -82,25 +82,7 @@
     computed: {
       getDeals: function () {
         let select = ['*', 'UF_CRM_1512978954235', 'UF_CRM_1517221718', 'UF_CRM_1512967601319']
-        return new Promise((resolve, reject) => {
-          BX.get('crm.deal.list', {
-            filter: Object.assign({
-              '<=DATE_CREATE': this.dateComponent.dateTo,
-              '>=CLOSEDATE': this.dateComponent.dateFrom
-            }, this.baseFilter),
-            select: select
-          }).then(result => {
-            BX.get('crm.deal.list', {
-              filter: Object.assign({
-                '<=DATE_CREATE': this.dateComponent.dateTo,
-                'CLOSED': 'N'
-              }, this.baseFilter),
-              select: select
-            }).then(result2 => {
-              resolve(result.concat(result2))
-            })
-          })
-        })
+        return BX.deals(this.dateComponent.dateFrom, this.dateComponent.dateTo, this.baseFilter, select)
       },
       getStatus: function () {
         return BX.get('entity.item.get', {

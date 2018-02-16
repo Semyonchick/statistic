@@ -146,7 +146,7 @@
           }
           Object.keys(this.counts).forEach((value) => {
             data[value] = this[value].filter(row => row.SOURCE_ID === data['sourceId'] || (
-              row.UF_CRM_1512969036 && this.dealStatusList.filter(status => status.ID === row.UF_CRM_1512969036)[0]['VALUE'] === data['name']
+              row.UF_CRM_1512969036 && this.dealStatusList.filter(status => status.ID === row.UF_CRM_1512969036).length && this.dealStatusList.filter(status => status.ID === row.UF_CRM_1512969036)[0]['VALUE'] === data['name']
             )).length
             data[value + 'Percent'] = Math.round(data[value] * 100 / this.counts[value])
           })

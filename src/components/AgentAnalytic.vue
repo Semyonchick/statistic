@@ -63,7 +63,7 @@
         leads: '',
         code: {
           source: 'UF_CRM_1512969036',
-          sourceValue: '100',
+          sourceValue: 100,
           agent: 'UF_CRM_1514277034'
         }
       }
@@ -91,7 +91,7 @@
           agent.leads = false
           return agent
         })
-        this.getLeads.then((data) => {
+        this.getDeals.then((data) => {
           this.leads = data
           data.forEach(row => {
             this.agents.map(agent => {
@@ -108,23 +108,26 @@
         })
         return this.leads
       },
-      getLeads () {
-        return new Promise(resolve => {
-          let filter1 = {'>=DATE_CREATE': this.$children[0].dateFrom, '<=DATE_CREATE': this.$children[0].dateTo}
-          filter1[this.code.source] = this.code.sourceValue
-
-          let filter2 = {'>=CLOSEDATE': this.$children[0].dateFrom, '<=CLOSEDATE': this.$children[0].dateTo}
-          filter2[this.code.source] = this.code.sourceValue
-
-          let select = ['ID', 'STAGE_ID', 'OPPORTUNITY', 'SOURCE_ID', this.code.agent]
-          BX.batch([
-            ['crm.deal.list', {filter: filter1, select: select}],
-            ['crm.deal.list', {filter: filter2, select: select}]
-          ]).then(result => {
-            this.$forceUpdate()
-            resolve(result[0].concat(result[1]))
-          })
-        })
+      getDeals () {
+        let filter = {}
+        let select = ['ID', 'STAGE_ID', 'OPPORTUNITY', 'SOURCE_ID', this.code.agent]
+        filter[this.code.source] = this.code.sourceValue
+        return BX.deals(this.$children[0].dateFrom, this.$children[0].dateTo, filter, select)
+//        return new Promise(resolve => {
+//          let filter1 = {'>=DATE_CREATE': this.$children[0].dateFrom, '<=DATE_CREATE': this.$children[0].dateTo}
+//
+//          let filter2 = {'>=CLOSEDATE': this.$children[0].dateFrom, '<=CLOSEDATE': this.$children[0].dateTo}
+//          filter2[this.code.source] = this.code.sourceValue
+//
+//          let select = ['ID', 'STAGE_ID', 'OPPORTUNITY', 'SOURCE_ID', this.code.agent]
+//          BX.batch([
+//            ['crm.deal.list', {filter: filter1, select: select}],
+//            ['crm.deal.list', {filter: filter2, select: select}]
+//          ]).then(result => {
+//            this.$forceUpdate()
+//            resolve(result[0].concat(result[1]))
+//          })
+//        })
       }
     },
     created () {
