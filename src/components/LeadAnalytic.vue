@@ -191,7 +191,7 @@
         this.list = data[0].L.DISPLAY_VALUES_FORM
         this.list[null] = '*** без источника'
       })
-      BX.get('crm.deal.userfield.list', {filter: {FIELD_NAME:'UF_CRM_1512969036'}}).then((data) => {
+      BX.get('crm.deal.userfield.list', {filter: {FIELD_NAME: 'UF_CRM_1512969036'}}).then((data) => {
         this.dealStatusList = data[0].LIST
       })
 
