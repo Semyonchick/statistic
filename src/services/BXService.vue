@@ -39,7 +39,8 @@
     },
     deals (from, to, filter, select) {
       return new Promise((resolve, reject) => {
-        let result = []
+        let id = []
+        let result = {}
         let status = []
         this.get('crm.deal.list', {
           filter: Object.assign({
@@ -48,9 +49,11 @@
           }, filter),
           select: select
         }).then(data => {
-          result = result.concat(data)
+          data.forEach(row => {
+            result[row.ID] = row
+          })
           status.push(1)
-          if(status.length === 2) resolve(result)
+          if(status.length === 2) resolve(Object.values(result))
         })
         this.get('crm.deal.list', {
           filter: Object.assign({
@@ -59,9 +62,11 @@
           }, filter),
           select: select
         }).then(data => {
-          result = result.concat(data)
+          data.forEach(row => {
+            result[row.ID] = row
+          })
           status.push(1)
-          if(status.length === 2) resolve(result)
+          if(status.length === 2) resolve(Object.values(result))
         })
       })
     }

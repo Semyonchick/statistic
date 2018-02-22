@@ -17,15 +17,16 @@
             </tr>-->
             <tr>
                 <th>Заявок в работе</th>
-                <td v-for="user in managerInfo">{{user.st.dealsCount}}</td>
+                <td v-for="user in managerInfo"><a href="#" @click="goTo('all', user)">{{user.st.dealsCount}}</a></td>
             </tr>
             <tr>
                 <th>Новых</th>
-                <td v-for="user in managerInfo">{{user.st.dealsNewCount}}</td>
+                <td v-for="user in managerInfo"><a href="#" @click="goTo('new', user)">{{user.st.dealsNewCount}}</a>
+                </td>
             </tr>
             <tr>
                 <th>Потеряно</th>
-                <td v-for="user in managerInfo">{{user.st.dealsLoseCount}}</td>
+                <td v-for="user in managerInfo"><a href="#" @click="goTo('fail', user)">{{user.st.dealsLoseCount}}</a></td>
             </tr>
             <!--<tr>
                 <th>Показы</th>
@@ -33,13 +34,13 @@
             </tr>-->
             <tr>
                 <th>Авансы</th>
-                <td v-for="user in managerInfo">{{user.st.prepaid}}
+                <td v-for="user in managerInfo"><a href="#" @click="goTo('prepay', user)">{{user.st.prepaid}}</a>
                     <span class="opacity" v-if="user.st.prepaidSum">/ {{user.st.prepaidSum}} руб.</span>
                 </td>
             </tr>
             <tr>
                 <th>Зарегистрировано ДДУ</th>
-                <td v-for="user in managerInfo">{{user.st.registered}}
+                <td v-for="user in managerInfo"><a href="#" @click="goTo('register', user)">{{user.st.registered}}</a>
                     <span class="opacity" v-if="user.st.registeredSum">/ {{user.st.registeredSum}} руб.</span></td>
             </tr>
             </tbody>
@@ -75,6 +76,34 @@
       }
     },
     methods: {
+      goTo (type, row) {
+        let path = '/crm/deal/category/0/'
+        let dates = '-from-' + this.$children[0].dateFrom.split('-').reverse().join('.') + '-to-' + this.$children[0].dateTo.split('-').reverse().join('.')
+        let params = []
+        params.push('UF_CRM_1512969036-is-100')
+        if (row) {
+          params.push('ASSIGNED_BY_ID-is-' + row.ID)
+          params.push('ASSIGNED_BY_ID_label-is-' + (row.LAST_NAME + ' ' + row.NAME))
+        }
+
+        if (type === 'new') {
+          params.push('BEGINDATE' + dates)
+        } else if (type === 'fail') {
+          params.push('CLOSEDATE' + dates)
+          params.push('STAGE_ID-is-LOSE')
+        } else if (type === 'prepay') {
+          params.push('UF_CRM_1517221718' + dates)
+        } else if (type === 'register') {
+          params.push('UF_CRM_1512978954235' + dates)
+        } else {
+          params.push('DATE_CREATE-to-' + this.$children[0].dateTo.split('-').reverse().join('.'))
+          params.push('DATE_MODIFY-from-' + this.$children[0].dateFrom.split('-').reverse().join('.'))
+        }
+
+        let url = '//holding-gel.bitrix24.ru' + path + '#/f/' + params.join('/') + '/'
+
+        window.top.location.href = url
+      },
       inDates (date) {
         return date ? date >= this.dateComponent.dateFrom && date <= this.dateComponent.dateTo : false
       }

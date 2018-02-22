@@ -18,13 +18,13 @@
                 <th>{{row.name}}</th>
                 <td>{{row.price}}</td>
                 <td>{{row.priceDeal}}</td>
-                <td class="primary">{{row.leads || '-'}}
+                <td class="primary"><a href="#" @click="goTo('all', row)">{{row.leads || '-'}}</a>
                     <span class="opacity" v-if="row.leadsPercent">/ {{row.leadsPercent}}%</span>
                 </td>
-                <td class="success">{{row.leadDeals || '-'}}
+                <td class="success"><a href="#" @click="goTo('success', row)">{{row.leadDeals || '-'}}</a>
                     <span class="opacity" v-if="row.leadDealsPercent">/ {{row.leadDealsPercent}}%</span>
                 </td>
-                <td class="bad">{{row.leadCanceled || '-'}}
+                <td class="bad"><a href="#" @click="goTo('bad', row)">{{row.leadCanceled || '-'}}</a>
                     <span class="opacity" v-if="row.leadCanceledPercent">/ {{row.leadCanceledPercent}}%</span></td>
             </tr>
             </tbody>
@@ -33,9 +33,9 @@
                 <th>ИТОГО:</th>
                 <td>{{calculate(false)}}</td>
                 <td>{{counts.leadDeals ? Math.round(calculate(false) / counts.leadDeals) : '***'}}</td>
-                <td class="primary">{{counts.leads}}</td>
-                <td class="success">{{counts.leadDeals}}</td>
-                <td class="bad">{{counts.leadCanceled}}</td>
+                <td class="primary"><a href="#" @click="goTo('all')">{{counts.leads}}</a></td>
+                <td class="success"><a href="#" @click="goTo('success')">{{counts.leadDeals}}</a></td>
+                <td class="bad"><a href="#" @click="goTo('bad')">{{counts.leadCanceled}}</a></td>
             </tr>
 
             </tfoot>
@@ -63,6 +63,36 @@
       }
     },
     methods: {
+      goTo (type, row) {
+        let dates = '-from-' + this.date.dateFrom.split('-').reverse().join('.') + '-to-' + this.date.dateTo.split('-').reverse().join('.')
+        let params = []
+        let path
+        if (type === 'success') {
+          path = '/crm/deal/category/0/'
+        } else {
+          path = '/crm/lead/list/'
+        }
+
+        params.push('DATE_CREATE' + dates)
+        if (type === 'success') {
+          let deals = this.dealStatusList
+          if (row) {
+            deals = deals.filter(value => value.VALUE === row.name)
+          }
+          params.push('UF_CRM_1512969036-is-' + deals.map(value => +value.ID).filter(value => value !== 100).join('-or-'))
+        } else {
+          if (type === 'bad') {
+            params.push('STATUS_ID-is-JUNK')
+          }
+          if (row) {
+            params.push('SOURCE_ID-is-' + row.sourceId)
+          }
+        }
+
+        let url = '//holding-gel.bitrix24.ru' + path + '#/f/' + params.join('/') + '/'
+
+        window.top.location.href = url
+      },
       calculate: function (key) {
         return Math.round(this.filteredInfo.filter(value => key ? value.sourceId === key : true).map(value => value.price).reduce((a, b) => a + b, 0))
       },

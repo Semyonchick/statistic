@@ -16,16 +16,20 @@
             <tr v-for="agent in agents" v-if="agent.leads">
                 <th>{{agent.VALUE}}</th>
                 <td class="success" v-if="data=agent.leads.filter(work)">
-                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                    <a href="#" @click="goTo('work', agent)">{{data.length}}</a> <span class="opacity"
+                                                                                       v-if="value=sum(data)">/ {{value}}</span>
                 </td>
                 <td class="bad" v-if="data=agent.leads.filter(lose)">
-                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                    <a href="#" @click="goTo('fail', agent)">{{data.length}}</a> <span class="opacity"
+                                                                                       v-if="value=sum(data)">/ {{value}}</span>
                 </td>
                 <td class="primary" v-if="data=agent.leads.filter(won)">
-                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                    <a href="#" @click="goTo('success', agent)">{{data.length}}</a> <span class="opacity"
+                                                                                          v-if="value=sum(data)">/ {{value}}</span>
                 </td>
                 <td v-if="data=agent.leads">
-                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                    <a href="#" @click="goTo('all', agent)">{{data.length}}</a> <span class="opacity"
+                                                                                      v-if="value=sum(data)">/ {{value}}</span>
                 </td>
             </tr>
             </tbody>
@@ -33,16 +37,17 @@
             <tr>
                 <th>ИТОГО:</th>
                 <td v-if="data=leads.filter(work)">
-                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                    <a href="#" @click="goTo('work')">{{data.length}}</a> <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
                 </td>
                 <td v-if="data=leads.filter(lose)">
-                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                    <a href="#" @click="goTo('fail')">{{data.length}}</a> <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
                 </td>
                 <td v-if="data=leads.filter(won)">
-                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                    <a href="#" @click="goTo('success')">{{data.length}}</a> <span class="opacity"
+                                                                                   v-if="value=sum(data)">/ {{value}}</span>
                 </td>
                 <td v-if="data=leads">
-                    {{data.length}} <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
+                    <a href="#" @click="goTo('all')">{{data.length}}</a> <span class="opacity" v-if="value=sum(data)">/ {{value}}</span>
                 </td>
             </tr>
             </tfoot>
@@ -69,6 +74,35 @@
       }
     },
     methods: {
+      goTo (type, row) {
+        let path = '/crm/deal/category/0/'
+        let dates = '-from-' + this.$children[0].dateFrom.split('-').reverse().join('.') + '-to-' + this.$children[0].dateTo.split('-').reverse().join('.')
+        let params = []
+        params.push('UF_CRM_1512969036-is-100')
+
+        if (type === 'work') {
+          params.push('DATE_CREATE-to-' + this.$children[0].dateTo.split('-').reverse().join('.'))
+          params.push('CLOSED-is-N')
+        } else if (type === 'success') {
+          params.push('CLOSEDATE' + dates)
+          params.push('STAGE_ID-is-WON')
+        } else if (type === 'fail') {
+          params.push('CLOSEDATE' + dates)
+          params.push('STAGE_ID-is-LOSE')
+        } else {
+          params.push('DATE_CREATE-to-' + this.$children[0].dateTo.split('-').reverse().join('.'))
+          params.push('CLOSEDATE-from-' + this.$children[0].dateFrom.split('-').reverse().join('.'))
+        }
+
+        if (row) {
+          params.push('UF_CRM_1514277034-is-' + row.ID)
+        }
+
+        let url = '//holding-gel.bitrix24.ru' + path + '#/f/' + params.join('/') + '/'
+
+//        console.log(url)
+        window.top.location.href = url
+      },
       sum (list) {
         return list.length ? list.map(row => +row.OPPORTUNITY).reduce((a, b) => a + b) : false
       },
