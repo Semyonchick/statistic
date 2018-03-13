@@ -32,8 +32,23 @@
     },
     batch (methods) {
       return new Promise((resolve) => {
+        let next = false
+        let result = {}
         BX24.callBatch(methods, (request) => {
-          resolve(request.map(row => row.answer.result).filter(row => row))
+          if(next) {
+            request.answer.result.forEach(data => result[request.query.method + request.query.data].push(data))
+            if (request.answer.next) request.next()
+            else resolve(Object.values(result))
+          } else {
+            next = false
+            result = request.map(row => row.answer.result).filter(row => row)
+            request.forEach(row => {
+              result[row.query.method + row.query.data] = row.answer.result
+              if (row.answer.next) row.next()
+              next = next || !!row.answer.next
+            })
+            if (!next) resolve(Object.values(result))
+          }
         })
       })
     },
@@ -53,7 +68,7 @@
             result[row.ID] = row
           })
           status.push(1)
-          if(status.length === 2) resolve(Object.values(result))
+          if (status.length === 2) resolve(Object.values(result))
         })
         this.get('crm.deal.list', {
           filter: Object.assign({
@@ -66,7 +81,7 @@
             result[row.ID] = row
           })
           status.push(1)
-          if(status.length === 2) resolve(Object.values(result))
+          if (status.length === 2) resolve(Object.values(result))
         })
       })
     }

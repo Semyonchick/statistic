@@ -2,7 +2,7 @@
     <div>
         <date-select></date-select>
 
-        <table v-if=" date" width="100%" cellspacing="0" cellpadding="0">
+        <table v-if="getLeads && date" width="100%" cellspacing="0" cellpadding="0">
             <thead>
             <tr>
                 <th>Источники</th>
@@ -52,6 +52,7 @@
     name: 'LeadAnalytic',
     data () {
       return {
+        wait: 0,
         date: '',
         list: {},
         info: [],
@@ -104,38 +105,12 @@
         }).then((data) => {
           this.info = data
         })
-      },
-      getLeads: function () {
-        this.leads = []
-        BX.get('crm.deal.list', {
-          filter: {
-            '>=DATE_CREATE': this.date.dateFrom,
-            '<=DATE_CREATE': this.date.dateTo,
-            CATEGORY_ID: 0,
-            '!UF_CRM_1512969036': 100
-          },
-          select: ['ID', 'LEAD_ID', 'STAGE_ID', 'UF_CRM_1512969036', 'DATE_CREATE']
-        }).then((data) => {
-          this.deals = data.filter(row => !row.LEAD_ID)
-          this.deals.forEach(row => this.leads.push(row))
-          this.inDeals = data.map(row => row.LEAD_ID)
-          this.$forceUpdate()
-        })
-        BX.get('crm.lead.list', {
-          order: {'ID': 'ASC'},
-          filter: {'>=DATE_CREATE': this.date.dateFrom, '<=DATE_CREATE': this.date.dateTo},
-          select: ['ID', 'STATUS_ID', 'SOURCE_ID']
-        }).then((data) => {
-          data.forEach(row => this.leads.push(row))
-          this.$forceUpdate()
-        })
       }
     },
     computed: {
       filteredInfo: function () {
         if (!this.info) return []
 
-        this.getLeads()
         const baseDates = [this.date.dateFrom, this.date.dateTo].map(value => Date.parse(value) / 86400000)
         return this.info.map((row) => {
           let dates = [row.ACTIVE_FROM, row.ACTIVE_TO].map(value => Date.parse(value.split(' ')[0].split('.').reverse().join('-')) / 86400000)
@@ -148,6 +123,38 @@
             price: price
           }
         })
+      },
+      getLeads: function () {
+        this.leads = []
+        BX.batch([
+          ['crm.deal.list', {
+            filter: {
+              '>=DATE_CREATE': this.date.dateFrom,
+              '<=DATE_CREATE': this.date.dateTo,
+              CATEGORY_ID: 0,
+              '!UF_CRM_1512969036': 100
+            },
+            select: ['ID', 'LEAD_ID', 'STAGE_ID', 'UF_CRM_1512969036', 'DATE_CREATE']
+          }],
+          ['crm.lead.list', {
+            order: {'ID': 'ASC'},
+            filter: {'>=DATE_CREATE': this.date.dateFrom, '<=DATE_CREATE': this.date.dateTo},
+            select: ['ID', 'STATUS_ID', 'SOURCE_ID']
+          }]
+        ]).then(data => {
+          if (data[0].length || data[1].length) {
+            this.leads = []
+
+            this.deals = data[0].filter(row => !row.LEAD_ID)
+            this.deals.forEach(row => this.leads.push(row))
+            this.inDeals = data[0].map(row => row.LEAD_ID)
+
+            data[1].forEach(row => this.leads.push(row))
+
+            this.$forceUpdate()
+          }
+        })
+        return true
       },
       leadStatistic: function () {
         let result = []

@@ -49,11 +49,13 @@
             <tfoot>
             <tr>
                 <th>Эффективность:</th>
-                <td v-for="user in managerInfo" v-if="user.st.dealsCount">
+                <td v-for="user in managerInfo">
+                    <template v-if="user.st.dealsCount">
                     {{Math.round(user.st.registered / user.st.dealsCount * 100)}}%
                     <span v-if="user.st.registered" class="success">{{Math.ceil(user.st.total / user.st.registered)}} руб.</span>
                     <span v-else-if="user.st.total" class="bad">-{{user.st.total}} руб.</span>
                     <span v-else>-</span>
+                    </template>
                 </td>
             </tr>
             </tfoot>
