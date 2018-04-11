@@ -59,6 +59,7 @@
         leads: [],
         deals: [],
         inDeals: [],
+        users: [],
         dealStatusList: [],
         leadStatusList: []
       }
@@ -138,7 +139,11 @@
           }],
           ['crm.lead.list', {
             order: {'ID': 'ASC'},
-            filter: {'>=DATE_CREATE': this.date.dateFrom, '<=DATE_CREATE': this.date.dateTo},
+            filter: {
+              '>=DATE_CREATE': this.date.dateFrom,
+              '<=DATE_CREATE': this.date.dateTo,
+              ASSIGNED_BY_ID: this.users.map(user => user.ID)
+            },
             select: ['ID', 'STATUS_ID', 'SOURCE_ID']
           }]
         ]).then(data => {
@@ -241,6 +246,12 @@
           NAME: '*** без источника',
           STATUS_ID: null
         })
+      })
+
+      BX.get('user.get', {
+        FILTER: {UF_DEPARTMENT: 114}
+      }).then(data => {
+        this.users = data
       })
 
       this.getInfo()

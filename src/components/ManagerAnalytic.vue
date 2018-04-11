@@ -7,6 +7,7 @@
             <tr>
                 <th>Пользователи</th>
                 <th v-for="user in managerInfo">{{user.NAME}} {{user.LAST_NAME[0]}}.</th>
+                <th>Сумма</th>
             </tr>
             </thead>
 
@@ -18,16 +19,19 @@
             <tr>
                 <th>Заявок в работе</th>
                 <td v-for="user in managerInfo"><a href="#" @click="goTo('all', user)">{{user.st.dealsCount}}</a></td>
+                <td>{{countAll('dealsCount')}}</td>
             </tr>
             <tr>
                 <th>Новых</th>
                 <td v-for="user in managerInfo"><a href="#" @click="goTo('new', user)">{{user.st.dealsNewCount}}</a>
                 </td>
+                <td>{{countAll('dealsNewCount')}}</td>
             </tr>
             <tr>
                 <th>Потеряно</th>
                 <td v-for="user in managerInfo"><a href="#" @click="goTo('fail', user)">{{user.st.dealsLoseCount}}</a>
                 </td>
+                <td>{{countAll('dealsLoseCount')}}</td>
             </tr>
             <!--<tr>
                 <th>Показы</th>
@@ -38,11 +42,15 @@
                 <td v-for="user in managerInfo"><a href="#" @click="goTo('prepay', user)">{{user.st.prepaid}}</a>
                     <span class="opacity" v-if="user.st.prepaidSum">/ {{user.st.prepaidSum}} руб.</span>
                 </td>
+                <td>{{countAll('prepaid')}}
+                    <span class="opacity" v-if="value=countAll('prepaidSum')">/ {{value}} руб.</span></td>
             </tr>
             <tr>
                 <th>Зарегистрировано ДДУ</th>
                 <td v-for="user in managerInfo"><a href="#" @click="goTo('register', user)">{{user.st.registered}}</a>
                     <span class="opacity" v-if="user.st.registeredSum">/ {{user.st.registeredSum}} руб.</span></td>
+                <td>{{countAll('registered')}}
+                    <span class="opacity" v-if="value=countAll('registeredSum')">/ {{value}} руб.</span></td>
             </tr>
             </tbody>
 
@@ -51,10 +59,18 @@
                 <th>Эффективность:</th>
                 <td v-for="user in managerInfo">
                     <template v-if="user.st.dealsCount">
-                    {{Math.round(user.st.registered / user.st.dealsCount * 100)}}%
-                    <span v-if="user.st.registered" class="success">{{Math.ceil(user.st.total / user.st.registered)}} руб.</span>
-                    <span v-else-if="user.st.total" class="bad">-{{user.st.total}} руб.</span>
-                    <span v-else>-</span>
+                        {{Math.round(user.st.registered / user.st.dealsCount * 100)}}%
+                        <span v-if="user.st.registered" class="success">{{Math.ceil(user.st.total / user.st.registered)}} руб.</span>
+                        <span v-else-if="user.st.total" class="bad">-{{user.st.total}} руб.</span>
+                        <span v-else>-</span>
+                    </template>
+                </td>
+                <td>
+                    <template v-if="countAll('dealsCount')">
+                        {{Math.round(countAll('registered') / countAll('dealsCount') * 100)}}%
+                        <span v-if="value=countAll('registered')" class="success">{{Math.ceil(countAll('total') / value)}} руб.</span>
+                        <span v-else-if="value=countAll('total')" class="bad">-{{value}} руб.</span>
+                        <span v-else>-</span>
                     </template>
                 </td>
             </tr>
@@ -83,6 +99,9 @@
       }
     },
     methods: {
+      countAll (field) {
+        return this.managerInfo.map(user => user.st[field] || 0).reduce((a, b) => +a + +b, 0)
+      },
       goTo (type, row) {
         let path = '/crm/deal/category/0/'
         let dates = '-from-' + this.$children[0].dateFrom.split('-').reverse().join('.') + '-to-' + this.$children[0].dateTo.split('-').reverse().join('.')
