@@ -233,11 +233,13 @@
         this.list = data[0].L.DISPLAY_VALUES_FORM
         this.list[null] = '*** без источника'
       })
-      BX.get('crm.deal.userfield.list', {filter: {FIELD_NAME: 'UF_CRM_1512969036'}}).then((data) => {
+      let dealStatusList = BX.get('crm.deal.userfield.list', {filter: {FIELD_NAME: 'UF_CRM_1512969036'}}).then((data) => {
         this.dealStatusList = data[0].LIST
+        return data[0]
       })
 
       BX.get('crm.status.list', {
+        order: {'ID': 'ASC'},
         filter: {'ENTITY_ID': 'SOURCE'},
         select: ['STATUS_ID', 'NAME']
       }).then((data) => {
@@ -245,6 +247,13 @@
         this.leadStatusList.push({
           NAME: '*** без источника',
           STATUS_ID: null
+        })
+      }).then(_ => {
+        dealStatusList.then(field => {
+          this.leadStatusList.filter(row => !this.dealStatusList.filter(row2 => row.NAME === row2.VALUE).length && row.STATUS_ID).forEach(row => {
+            field.LIST.push({VALUE: row.NAME})
+          })
+          BX.get('crm.deal.userfield.update', {id: field.ID, fields: {LIST: field.LIST}})
         })
       })
 
